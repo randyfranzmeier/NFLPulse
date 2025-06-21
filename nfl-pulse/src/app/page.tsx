@@ -1,13 +1,31 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { CategoryScale, ChartOptions, LinearScale } from 'chart.js';
+import Chart from 'chart.js/auto';
+// Tell Next.js to let the graph load client-side
+import BarChart from '@/components/barchart';
+
 
 function NFLStatPlatform() {
+
+  useEffect(() => {
+    Chart.register(CategoryScale, LinearScale);
+  }, []);
+
   const [isTeamOrPlayerOpen, setIsTeamOrPlayerOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [isYearOpen, setIsYearOpen] = useState(false);
   const [hearInsights, setHearInsights] = useState(true);
-  const [aiResponse, setAiResponse] = useState("Click generate to hear some fun footbal facts!")
+  const [aiResponse, setAiResponse] = useState("Click generate to hear some fun football facts!")
+
+
+  const labels = ["Joe Burrow", "Jared Goff", "Baker Mayfield", "Geno Smith", "Sam Darnold"];
+  const barChartData = [4918, 4629, 4500, 4320, 4319];
+  const title = 'Top 5 Passing Yards per Player in 2024';
+  const xName = 'Player Name'; // figure out from team or player selection
+  const yName = 'Passing Yards'; // figure out from 
+
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
@@ -196,13 +214,13 @@ function NFLStatPlatform() {
               }
             </div>
 
-            {/* Graph TODO convert to component */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <p className="text-gray-800">Display Graph here!</p>
-              <div className="bg-gray-200 h-64 flex items-center justify-center text-gray-600 rounded">
-                <p>Graph</p>
-              </div>
-            </div>
+            <BarChart
+            labels={labels}
+            barChartData={barChartData}
+            title={title}
+            xName={xName}
+            yName={yName}
+              />
           </div>
         </div>
       </div>
