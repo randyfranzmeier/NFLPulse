@@ -2,7 +2,7 @@ import { MAX_YEAR, MIN_YEAR, PLAYERS, PLAYERCATEGORIES, TEAMS, TEAMCATEGORIES } 
 import { NflStat } from "@/types/nflStats";
 import { capitalizeString } from "@/utils/textDisplay";
 import { NextRequest, NextResponse } from "next/server";
-import { Browser, chromium, Page } from "playwright";
+import { chromium } from "playwright";
 
 const pageMap = {
     TEAMS: "Team Stats",
@@ -12,6 +12,12 @@ const pageMap = {
 type GraphData = {
     labels: Array<string>;
     data: Array<number>;
+};
+
+type GraphMetaData = {
+    title: string;
+    xName: string;
+    yName: string;
 };
 
 export async function GET(
@@ -26,24 +32,9 @@ export async function GET(
             return NextResponse.json({ error: "Bad Request", status: 400 });
         }
 
-        const testData: NflStat = {
-            xName: "Player Name",
-            yName: "Passing yards",
-            title: "Top 5 Passing Yard per Player",
-            labels: [],
-            barChartData: []
-            // labels: ["Joe Burrow", "Jared Goff", "Baker Mayfield", "Geno Smith", "Sam Darnold"],
-            // barChartData: [4918, 4629, 4500, 4320, 4319]
-        }
-        // TODO figure out title, xName, and yName based off selection
-        const response = await getNflDataWebCrawler(teamOrPlayer as string, category as string, year);
-        testData.labels = response.labels;
-        testData.barChartData = response.data;
-        console.log("Res: ", testData);
-        return NextResponse.json(testData);
+        return NextResponse.json(await getNflDataWebCrawler(teamOrPlayer as string, category as string, year));
 
     } catch (err) {
-        console.log("ERROR DUDE: ", err);
         return NextResponse.json({ error: "Internal server error", status: 500 });
     }
 }
@@ -63,7 +54,7 @@ function validateStatsRequest(teamOrPlayer: string | null, category: string | nu
     }
 }
 
-async function getNflDataWebCrawler(teamsOrPlayers: string, category: string, year: number): Promise<GraphData> {
+async function getNflDataWebCrawler(teamsOrPlayers: string, category: string, year: number): Promise<NflStat> {
     switch(category) {
         case "fieldgoals": category = "Field Goals"; break;
         case "kickoffreturns": category = "Kickoff Returns"; break;
@@ -132,13 +123,37 @@ async function getNflDataWebCrawler(teamsOrPlayers: string, category: string, ye
     // close the browser now that we're done
     await browser.close();
 
-    const response: GraphData = {labels: labels, data: data};
-
+    // Metadata for the visual
+    const metaData = getChartMetaData(teamsOrPlayers, category, year);
+    const response: NflStat = {labels: labels, barChartData: data, xName: metaData.xName, yName: metaData.yName, title: metaData.title};
     return response;
 }
 
-function getChartMetaData(teamsOrPlayers:string, category: string, year: number) {
+function getChartMetaData(teamsOrPlayers:string, category: string, year: number): GraphMetaData {
+    let title, xName, yName;
 
+    xName = teamsOrPlayers === TEAMS ? "Team Name" : "Player Name";
+
+    switch(category) {
+        case "Passing": yName = "Passing Yards"; break;
+        case "Rushing": yName = "Rushing Yards"; break;
+        case "Receiving": yName = "Receiving Yards"; break;
+        case "Scoring": yName = "Touchdowns"; break;
+        case "Downs": yName = "Receiving 1st Downs"; break;
+        case "Fumbles": yName = "Forced Fumbles"; break;
+        case "Kickoffs": yName = "Total Kickoffs"; break;
+        case "Kickoff Returns": yName = "Average Kickoff Return Yards";
+        case "Punting": yName = "Average Punting Yards"; break;
+        case "Punt Returns": yName = "Average Punt Return Yards"; break;
+        default: yName = category;
+    }
+
+    title = `${yName} per ${xName === "Team Name"? "Team" : "Player"} in ${year}`;
+    return {
+        title: title,
+        xName: xName,
+        yName: yName
+    } as GraphMetaData;
 }
 
 function getCurrentTableMetricIndex(teamsOrPlayers: string, category: string): number {
