@@ -2,7 +2,7 @@ import { MAX_YEAR, MIN_YEAR, PLAYERS, PLAYERCATEGORIES, TEAMS, TEAMCATEGORIES } 
 import { NflStat } from "@/types/nflStats";
 import { capitalizeString } from "@/utils/textDisplay";
 import { NextRequest, NextResponse } from "next/server";
-import { chromium } from "playwright";
+import { Browser, chromium, Page } from "playwright";
 
 const pageMap = {
     TEAMS: "Team Stats",
@@ -43,7 +43,7 @@ export async function GET(
         return NextResponse.json(testData);
 
     } catch (err) {
-        console.log(`Error retrieving stats: ${err}`);
+        console.log("ERROR DUDE: ", err);
         return NextResponse.json({ error: "Internal server error", status: 500 });
     }
 }
@@ -64,39 +64,44 @@ function validateStatsRequest(teamOrPlayer: string | null, category: string | nu
 }
 
 async function getNflDataWebCrawler(teamsOrPlayers: string, category: string, year: number): Promise<GraphData> {
-    console.log("ARGUMENTS PASSED: 1, 2, 3: ", teamsOrPlayers, category, year);
-    const browser = await chromium.launch({headless: false});
+    switch(category) {
+        case "fieldgoals": category = "Field Goals"; break;
+        case "kickoffreturns": category = "Kickoff Returns"; break;
+        case "puntreturns": category = "Punt Returns"; break;
+        default: category = capitalizeString(category);
+    }
+
+    const browser = await chromium.launch();
     const page = await browser.newPage();
     await page.goto("https://www.nfl.com/stats/");
 
     // click on teams or players depending on the users selection
     const teamsOrPlayersText = teamsOrPlayers === TEAMS ? pageMap.TEAMS : pageMap.PLAYERS;
-    const teamsOrPlayersLink = page.locator("li.py-2>a", { hasText: `${teamsOrPlayersText}` });
+    const teamsOrPlayersLink = page.getByRole("link", { name: `${teamsOrPlayersText}` });
     if (!teamsOrPlayersLink) {
         throw new Error(`Unable to locate element ${teamsOrPlayersText} on page`);
     }
     await teamsOrPlayersLink.click();
 
-    page.waitForLoadState('domcontentloaded');
     // Click on the category based on the users selection
-    const categoryLink = page.locator("a", { hasText: `${capitalizeString(category)}` });
+    const categoryLink = page.getByRole("link", { name: `${category}` });
     if (!categoryLink) {
-        throw new Error(`Unable to locate element ${capitalizeString(category)}`)
+        throw new Error(`Unable to locate element ${category}`)
     }
-    await categoryLink.click().then(async () => {
-        // selecting the year, a bit tricky since we need to handle select options instead of clickable elements
+    await categoryLink.click();
+
+    await page.waitForLoadState('load');
+
+    // selecting the year, a bit tricky since we need to handle select options instead of clickable elements
     await page.locator("select.d3-o-dropdown").selectOption({
         label: String(year)
     });
-    })
-
-
-
 
     // now we want to obtain two lists from the provided table
-    let labels: Array<string> = [];
-    let data: Array<number> = [];
+    let labelToData: any = {};
     const table = page.locator("table>tbody>tr");
+    // wait for the table to display
+    await table.first().waitFor({state: 'visible', timeout: 5000});
     const rows = await table.count();
     // the metric is displayed in a different column for each category
     const nameLocator = teamsOrPlayers === TEAMS ? "td>div>div.d3-o-club-fullname" : "td>div>div>a";
@@ -108,15 +113,24 @@ async function getNflDataWebCrawler(teamsOrPlayers: string, category: string, ye
         if (!name) {
             throw new Error("Unable to read team or player name");
         }
-        labels.push(name);
 
         const metricCell = row.locator("td").nth(curTableMetricIndex);
         const metric: string | null = await metricCell.textContent();
         if (!metric) {
             throw new Error(`Unable to find metric in column ${curTableMetricIndex +1}`);
         }
-        data.push(Number(metric.replace(/,/g, "").trim()));
+        labelToData[cleanString(name)] = cleanString(metric);
+       
     }
+
+    let labels: Array<string> = [];
+    let data: Array<number> = [];
+    for (const [key, val] of Object.entries(labelToData)) {
+        labels.push(key);
+        data.push(Number(val));
+    }
+    // close the browser now that we're done
+    await browser.close();
 
     const response: GraphData = {labels: labels, data: data};
 
@@ -131,28 +145,32 @@ function getCurrentTableMetricIndex(teamsOrPlayers: string, category: string): n
     // teams category column number or players category column number
     if (teamsOrPlayers === TEAMS) {
         switch(category) {
-            case "passing": return 5; // passing yards
-            case "rushing": return 2; // rushing yards
-            case "receiving": return 2; // receiving yards
-            case "scoring": return 3; // total touchdowns
-            case "downs": return 5; // receiving 1st, TODO allow for multiple columns in the future
+            case "Passing": return 5; // passing yards
+            case "Rushing": return 2; // rushing yards
+            case "Receiving": return 2; // receiving yards
+            case "Scoring": return 3; // total touchdowns
+            case "Downs": return 5; // receiving 1st, TODO allow for multiple columns in the future
         }
     } else {
         switch (category) {
-            case "passing": return 1; // passing yards
-            case "rushing": return 1; // rushing yards
-            case "receiving": return 2; // receiving yards
-            case "fumbles": return 1; // forced fumbles
-            case "tackles": return 1; // all tackles player made
-            case "interceptions": return 1; // all interceptions
-            case "fieldgoals": return 1; // field goals made
-            case "kickoffs": return 1; // total kickoffs
-            case "kickoffreturns": return 1; // average kickoff return yards
-            case "punting": return 1; // average punting yards (yards per punt)
-            case "puntreturns": return 1; //average yards per punt return
+            case "Passing": return 1; // passing yards
+            case "Rushing": return 1; // rushing yards
+            case "Receiving": return 2; // receiving yards
+            case "Fumbles": return 1; // forced fumbles
+            case "Tackles": return 1; // all tackles player made
+            case "Interceptions": return 1; // all interceptions
+            case "Field Goals": return 1; // field goals made
+            case "Kickoffs": return 1; // total kickoffs
+            case "Kickoff Returns": return 1; // average kickoff return yards
+            case "Punting": return 1; // average punting yards (yards per punt)
+            case "Punt Returns": return 1; //average yards per punt return
         }
     }
 
     // this should never happen
-    return -1;
+   throw new Error(`Invalid category ${category}`);
+}
+
+function cleanString(str: string): string {
+    return str.replace(/,/g, "").trim();
 }
