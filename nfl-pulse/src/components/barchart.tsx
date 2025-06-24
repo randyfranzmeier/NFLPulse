@@ -2,16 +2,10 @@
 
 import dynamic from 'next/dynamic';
 import { ChartOptions } from 'chart.js';
+import { NflStat } from '@/types/nflStats';
 
 const Bar = dynamic(() => import('react-chartjs-2').then(mod => mod.Bar), { ssr: false });
 
- type BarChartProps = {
-    labels: Array<string>,
-    barChartData: Array<number>,
-    title: string,
-    xName: string,
-    yName: string
-};
 
 export default function BarChart({
     labels,
@@ -19,7 +13,7 @@ export default function BarChart({
     title,
     xName,
     yName
-}: BarChartProps) {
+}: NflStat) {
 
     const data = {
         labels: labels,
