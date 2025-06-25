@@ -3,6 +3,7 @@ import { NflStat } from "@/types/nflStats";
 import { capitalizeString } from "@/utils/textDisplay";
 import { NextRequest, NextResponse } from "next/server";
 import { chromium } from "playwright";
+import { getAiResponse } from "./openAiApi";
 
 const pageMap = {
     TEAMS: "Team Stats",
@@ -27,14 +28,21 @@ export async function GET(
         const teamOrPlayer = request.nextUrl.searchParams.get("teamsorplayers");
         const category = request.nextUrl.searchParams.get("category");
         const year = Number(request.nextUrl.searchParams.get("year"));
+        const insights = request.nextUrl.searchParams.get("insights") ? true : false;
 
         if (!validateStatsRequest(teamOrPlayer, category, year)) {
             return NextResponse.json({ error: "Bad Request", status: 400 });
         }
-
-        return NextResponse.json(await getNflDataWebCrawler(teamOrPlayer as string, category as string, year));
+        
+        let response = await getNflDataWebCrawler(teamOrPlayer as string, category as string, year);
+        
+        if (insights) {
+            response.aiResponse = await getAiResponse("screenshot", `Based on the title and image, give the user some football-related insights. TITLE\n${response.title}`);
+        }
+        return NextResponse.json(response);
 
     } catch (err) {
+        console.log("Internal Error: ", err);
         return NextResponse.json({ error: "Internal server error", status: 500 });
     }
 }
@@ -87,17 +95,23 @@ async function getNflDataWebCrawler(teamsOrPlayers: string, category: string, ye
     await page.locator("select.d3-o-dropdown").selectOption({
         label: String(year)
     });
-
     // now we want to obtain two lists from the provided table
     let labelToData: any = {};
     const table = page.locator("table>tbody>tr");
     // wait for the table to display
     await table.first().waitFor({state: 'visible', timeout: 5000});
+
+    // take screenshot if ai response is desired
+    const acceptCookiesButton = page.getByRole("button", {name: "Accept Cookies"});
+    await acceptCookiesButton.click();
+    await page.locator("table").screenshot({path: 'screenshot.png'});
+
     const rows = await table.count();
     // the metric is displayed in a different column for each category
     const nameLocator = teamsOrPlayers === TEAMS ? "td>div>div.d3-o-club-fullname" : "td>div>div>a";
     const curTableMetricIndex = getCurrentTableMetricIndex(teamsOrPlayers, category);
 
+    // TODO go to next page if the button exists to get all data
     for (let i = 0; i < rows; i++) {
         const row = table.nth(i);
         const name: string | null = await row.locator(nameLocator).textContent();
