@@ -15,7 +15,7 @@ export async function getAiResponse(imagePath: string, prompt: string): Promise<
         input: [
             {
                 role: "system",
-                content: [{type: "input_text", text: `${systemPrompt}`}]
+                content: [{type: "input_text", text: systemPrompt}]
             },
             {
                 role: "user",
@@ -28,17 +28,20 @@ export async function getAiResponse(imagePath: string, prompt: string): Promise<
     });
 
     if (response.error) {
-        console.log(`Open AI API error encountered: ${response.error}`);
+        console.log(`Open AI API error: ${response.error}`);
         throw new Error("Error retrieving OpenAI response");
+    }
+    
+    if (!response.output_text || response.output_text == "") {
+        throw new Error("Open AI response empty");
     }
 
     // delete screenshot as we don't need it anymore
-    fs.unlink(imagePath, (err) => {
-        if (err) {
-            console.error(`Error deleting file ${imagePath}`);
-            throw new Error("Error deleting file");
-        }
-    })
+    try {
+        fs.unlinkSync(imagePath);
+    } catch (err) {
+        console.error(`Error deleting file ${imagePath}:`, err);
+    }
 
     return response.output_text;
 }
