@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { CategoryScale, ChartOptions, LinearScale } from 'chart.js';
+import { CategoryScale, LinearScale } from 'chart.js';
 import Chart from 'chart.js/auto';
 // Tell Next.js to let the graph load client-side
 import BarChart from '@/components/barchart';
@@ -84,7 +84,12 @@ function NFLStatPlatform() {
     try {
       if (validateStatParams()) {
         setPageState(LOADING);
-        const chartData = await fetchNFLStats({ "teamsorplayers": teamsOrPlayers, "category": category, "year": year }) as NflStat;
+        const chartData = await fetchNFLStats({
+          "teamsorplayers": teamsOrPlayers,
+          "category": category,
+          "year": year,
+          "insights": hearInsights ? "true" : undefined}) as NflStat;
+
         setNflStat(chartData);
         // for now, filter by top 5 descending
         let labelToData: any = {};
@@ -93,14 +98,17 @@ function NFLStatPlatform() {
           labelToData[chartData.labels[i]] = chartData.barChartData[i];
         }
         const tupleEntries = Object.entries<number>(labelToData);
-        tupleEntries.sort((a,b) => b[1]-a[1])
-        const top5Sorted = Object.fromEntries(tupleEntries.slice(0,5))
+        tupleEntries.sort((a, b) => b[1] - a[1])
+        const top5Sorted = Object.fromEntries(tupleEntries.slice(0, 5))
+        chartData.title = "Top 5 " + chartData.title;
 
         chartData.barChartData = Object.values(top5Sorted);
         chartData.labels = Object.keys(top5Sorted);
         setNflStatSorted(chartData);
-        console.log("NFL STAT SORTED: ", nflStatSorted);
         setPageState(SUCCESS);
+        if (hearInsights && chartData.aiResponse) {
+          setAiResponse(chartData.aiResponse)
+        }
       } else {
         alert('Must select all options to generate stats!');
       }
