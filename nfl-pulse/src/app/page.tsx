@@ -12,6 +12,7 @@ import { fetchNFLStats } from '@/lib/nflApi';
 import { NflStat, PageState } from '@/types/nflStats';
 import { DEFAULT, ERROR, LOADING, SUCCESS } from '@/constants/state';
 
+const DEFAULT_AI_RESPONSE_MESSAGE = "Insights will appear here!";
 
 function NFLStatPlatform() {
 
@@ -27,7 +28,7 @@ function NFLStatPlatform() {
   const [categoryText, setCategoryText] = useState("Select");
   const [yearText, setYearText] = useState("Select");
   const [hearInsights, setHearInsights] = useState(true);
-  const [aiResponse, setAiResponse] = useState("Insights will appear here!")
+  const [aiResponse, setAiResponse] = useState(DEFAULT_AI_RESPONSE_MESSAGE)
   const [teamsOrPlayers, setTeamsOrPlayers] = useState("");
   const [category, setCategory] = useState("");
   const [year, setYear] = useState(0);
@@ -39,6 +40,7 @@ function NFLStatPlatform() {
     yName: "",
     barChartData: []
   }); // To customize the chart (sorted by top 5 for now)
+
   const [nflStatSorted, setNflStatSorted] = useState<NflStat>({
     labels: [],
     title: "",
@@ -83,6 +85,7 @@ function NFLStatPlatform() {
   const handleGenerateChart = async () => {
     try {
       if (validateStatParams()) {
+        setAiResponse(DEFAULT_AI_RESPONSE_MESSAGE);
         setPageState(LOADING);
         const chartData = await fetchNFLStats({
           "teamsorplayers": teamsOrPlayers,

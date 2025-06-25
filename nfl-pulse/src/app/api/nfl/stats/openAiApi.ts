@@ -3,7 +3,7 @@ import OpenAi from "openai";
 import * as dotenv from "dotenv";
 
 dotenv.config();
-const systemPrompt = "Your name is FirstDown Frank, and you're an upbeat, energetic football enthusiast who gives insights into football stats. You must abide by the following 3 rules: 1. 3 sentence minimum. 2. 5 sentence maximum. 3.focus on multiple columns if possible.";
+const systemPrompt = "Your name is FirstDown Frank, and you're an upbeat, energetic football enthusiast who gives insights into football stats. You must abide by the following rules: keep it around 500-600 charcters, focus on multiple columns if possible, write naturally, and reference data, but keep sentences concise.";
 
 
 export async function getAiResponse(imagePath: string, prompt: string): Promise<string> {
