@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { CategoryScale, ChartOptions, LinearScale } from 'chart.js';
+import { CategoryScale, LinearScale } from 'chart.js';
 import Chart from 'chart.js/auto';
 // Tell Next.js to let the graph load client-side
 import BarChart from '@/components/barchart';
@@ -12,6 +12,7 @@ import { fetchNFLStats } from '@/lib/nflApi';
 import { NflStat, PageState } from '@/types/nflStats';
 import { DEFAULT, ERROR, LOADING, SUCCESS } from '@/constants/state';
 
+const DEFAULT_AI_RESPONSE_MESSAGE = "Insights will appear here!";
 
 function NFLStatPlatform() {
 
@@ -27,7 +28,7 @@ function NFLStatPlatform() {
   const [categoryText, setCategoryText] = useState("Select");
   const [yearText, setYearText] = useState("Select");
   const [hearInsights, setHearInsights] = useState(true);
-  const [aiResponse, setAiResponse] = useState("Insights will appear here!")
+  const [aiResponse, setAiResponse] = useState(DEFAULT_AI_RESPONSE_MESSAGE)
   const [teamsOrPlayers, setTeamsOrPlayers] = useState("");
   const [category, setCategory] = useState("");
   const [year, setYear] = useState(0);
@@ -39,6 +40,7 @@ function NFLStatPlatform() {
     yName: "",
     barChartData: []
   }); // To customize the chart (sorted by top 5 for now)
+
   const [nflStatSorted, setNflStatSorted] = useState<NflStat>({
     labels: [],
     title: "",
@@ -83,8 +85,14 @@ function NFLStatPlatform() {
   const handleGenerateChart = async () => {
     try {
       if (validateStatParams()) {
+        setAiResponse(DEFAULT_AI_RESPONSE_MESSAGE);
         setPageState(LOADING);
-        const chartData = await fetchNFLStats({ "teamsorplayers": teamsOrPlayers, "category": category, "year": year }) as NflStat;
+        const chartData = await fetchNFLStats({
+          "teamsorplayers": teamsOrPlayers,
+          "category": category,
+          "year": year,
+          "insights": hearInsights ? "true" : undefined}) as NflStat;
+
         setNflStat(chartData);
         // for now, filter by top 5 descending
         let labelToData: any = {};
@@ -93,14 +101,17 @@ function NFLStatPlatform() {
           labelToData[chartData.labels[i]] = chartData.barChartData[i];
         }
         const tupleEntries = Object.entries<number>(labelToData);
-        tupleEntries.sort((a,b) => b[1]-a[1])
-        const top5Sorted = Object.fromEntries(tupleEntries.slice(0,5))
+        tupleEntries.sort((a, b) => b[1] - a[1])
+        const top5Sorted = Object.fromEntries(tupleEntries.slice(0, 5))
+        chartData.title = "Top 5 " + chartData.title;
 
         chartData.barChartData = Object.values(top5Sorted);
         chartData.labels = Object.keys(top5Sorted);
         setNflStatSorted(chartData);
-        console.log("NFL STAT SORTED: ", nflStatSorted);
         setPageState(SUCCESS);
+        if (hearInsights && chartData.aiResponse) {
+          setAiResponse(chartData.aiResponse)
+        }
       } else {
         alert('Must select all options to generate stats!');
       }

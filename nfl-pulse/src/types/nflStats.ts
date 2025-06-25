@@ -3,7 +3,8 @@ export type NflStat = {
     barChartData: Array<number>,
     title: string,
     xName: string,
-    yName: string
+    yName: string,
+    aiResponse?: string; 
 };
 
 export type PageState = 'success' | 'error' | 'loading' | 'default';
