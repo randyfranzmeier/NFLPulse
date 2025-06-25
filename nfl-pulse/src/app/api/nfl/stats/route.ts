@@ -10,11 +10,6 @@ const pageMap = {
     PLAYERS: "Player Stats"
 } as const;
 
-type GraphData = {
-    labels: Array<string>;
-    data: Array<number>;
-};
-
 type GraphMetaData = {
     title: string;
     xName: string;
@@ -35,11 +30,12 @@ export async function GET(
         }
         
         let response = await getNflDataWebCrawler(teamOrPlayer as string, category as string, year);
-        
+
         if (insights) {
-            response.aiResponse = await getAiResponse("screenshot", `Based on the title and image, give the user some football-related insights. TITLE\n${response.title}`);
+            response.aiResponse = await getAiResponse("screenshot.png", `Based on the title and image, give the user some football-related insights. TITLE\n${response.title}`);
         }
-        return NextResponse.json(response);
+
+         return NextResponse.json(response);
 
     } catch (err) {
         console.log("Internal Error: ", err);

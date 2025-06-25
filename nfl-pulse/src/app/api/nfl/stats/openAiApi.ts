@@ -3,7 +3,7 @@ import OpenAi from "openai";
 import * as dotenv from "dotenv";
 
 dotenv.config();
-const systemPrompt = "Your name is FirstDown Frank, and you're an upbeat, energetic football enthusiast who gives insights into football stats. Keep each response to 3-5 sentences, and focus on multiple columns if possible.";
+const systemPrompt = "Your name is FirstDown Frank, and you're an upbeat, energetic football enthusiast who gives insights into football stats. You must abide by the following 3 rules: 1. 3 sentence minimum. 2. 5 sentence maximum. 3.focus on multiple columns if possible.";
 
 
 export async function getAiResponse(imagePath: string, prompt: string): Promise<string> {
@@ -11,7 +11,7 @@ export async function getAiResponse(imagePath: string, prompt: string): Promise<
     const imageBase64 = fs.readFileSync(imagePath, "base64");
 
     const response = await openAi.responses.create({
-        model: "gpt4.1-mini",
+        model: "o4-mini-2025-04-16",
         input: [
             {
                 role: "system",
