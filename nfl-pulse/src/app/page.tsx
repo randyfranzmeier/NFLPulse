@@ -91,7 +91,7 @@ function NFLStatPlatform() {
           "teamsorplayers": teamsOrPlayers,
           "category": category,
           "year": year,
-          "insights": hearInsights ? "true" : undefined}) as NflStat;
+          "insights": hearInsights ? "true" : "false"}) as NflStat;
 
         setNflStat(chartData);
         // for now, filter by top 5 descending
