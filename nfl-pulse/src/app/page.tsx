@@ -302,8 +302,9 @@ function NFLStatPlatform() {
             <div className="w-64">
               <button
                 onClick={() => handleGenerateChart()}
+                disabled = {pageState === "loading"}
                 type="button"
-                className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-6 py-4 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-6 py-4 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800 disabled:bg-blue-900 disabled:hover:bg-blue-900">
                 Generate
               </button>
 
