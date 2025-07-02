@@ -77,11 +77,38 @@ function NFLStatPlatform() {
     return teamsOrPlayers != "" && category != "" && year != 0;
   }
 
+  // Filter the current chart data by order and number of elements to display.
+  const filterChartData = (descending: boolean, topN: number, chartData: NflStat) => {
+    // Map the stats to the labels 
+    let labelToData: any = {};
+    let n = chartData.labels.length;
+    for (let i = 0; i < n; i++) {
+      labelToData[chartData.labels[i]] = chartData.barChartData[i];
+    }
+    // Convert to "tuple" list instead of object
+    const tupleEntries = Object.entries<number>(labelToData);
+    if (descending) {
+      tupleEntries.sort((a, b) => b[1] - a[1]);
+    } else {
+      tupleEntries.sort((a, b) => a[1] - b[1])
+    }
+    
+    // Create the object again from the top N entries
+    const topNSorted = Object.fromEntries(tupleEntries.slice(0, topN))
+    
+    // modify chart data accordingly
+    chartData.title = `Top ${topN} ` + chartData.title;
+    chartData.barChartData = Object.values(topNSorted);
+    chartData.labels = Object.keys(topNSorted);
+    setNflStatSorted(chartData);
+  }
+
   const handleGenerateChart = async () => {
     try {
       if (validateStatParams()) {
         setAiResponse(DEFAULT_AI_RESPONSE_MESSAGE);
         setPageState(LOADING);
+        
         const chartData = await fetchNFLStats({
           "teamsorplayers": teamsOrPlayers,
           "category": category,
@@ -89,22 +116,13 @@ function NFLStatPlatform() {
           "insights": hearInsights ? "true" : "false"
         }) as NflStat;
 
+        // will use for filtering in the future
         setNflStat(chartData);
-        // for now, filter by top 5 descending
-        let labelToData: any = {};
-        let n = chartData.labels.length;
-        for (let i = 0; i < n; i++) {
-          labelToData[chartData.labels[i]] = chartData.barChartData[i];
-        }
-        const tupleEntries = Object.entries<number>(labelToData);
-        tupleEntries.sort((a, b) => b[1] - a[1])
-        const top5Sorted = Object.fromEntries(tupleEntries.slice(0, 5))
-        chartData.title = "Top 5 " + chartData.title;
 
-        chartData.barChartData = Object.values(top5Sorted);
-        chartData.labels = Object.keys(top5Sorted);
-        setNflStatSorted(chartData);
+        // for now, filter by top 5 descending
+        filterChartData(true, 5, chartData);
         setPageState(SUCCESS);
+
         if (hearInsights && chartData.aiResponse) {
           setAiResponse(chartData.aiResponse)
         }
@@ -236,14 +254,14 @@ function NFLStatPlatform() {
                         </p>))}
                       {teamsOrPlayers === "" && (
                         <>
-                        <p
-                          className="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
-                          role="menuitem"
-                          id={`menu-item-invalid`}
-                        >
-                          Please select Teams or Players to view available categories
-                        </p> 
-                        {/* <Tooltip description="All NFL Teams or Players to receive stats on" display="right" /> */}
+                          <p
+                            className="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
+                            role="menuitem"
+                            id={`menu-item-invalid`}
+                          >
+                            Please select Teams or Players to view available categories
+                          </p>
+                          {/* <Tooltip description="All NFL Teams or Players to receive stats on" display="right" /> */}
                         </>
                       )}
                     </div>
