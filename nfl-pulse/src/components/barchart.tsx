@@ -1,8 +1,10 @@
 "use client"
 
 import dynamic from 'next/dynamic';
-import { ChartOptions } from 'chart.js';
+import { CategoryScale, ChartOptions, LinearScale } from 'chart.js';
+import { Chart } from 'chart.js/auto';
 import { NflStat } from '@/types/nflStats';
+import { useEffect } from 'react';
 
 const Bar = dynamic(() => import('react-chartjs-2').then(mod => mod.Bar), { ssr: false });
 
@@ -15,6 +17,10 @@ export default function BarChart({
     yName
 }: NflStat) {
 
+   useEffect(() => {
+      Chart.register(CategoryScale, LinearScale);
+    }, []);
+    
     const data = {
         labels: labels,
         datasets: [{

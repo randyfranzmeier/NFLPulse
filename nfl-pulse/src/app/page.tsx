@@ -1,9 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
-import { CategoryScale, LinearScale } from 'chart.js';
-import Chart from 'chart.js/auto';
-// Tell Next.js to let the graph load client-side
+import React, { useState } from 'react';
 import BarChart from '@/components/barchart';
 import Error from '@/components/error';
 import { PLAYERS, PLAYERCATEGORIES, TEAMS, TEAMCATEGORIES, MAX_YEAR, MIN_YEAR } from '@/constants/nflStats';
@@ -16,9 +13,7 @@ const DEFAULT_AI_RESPONSE_MESSAGE = "Insights will appear here!";
 
 function NFLStatPlatform() {
 
-  useEffect(() => {
-    Chart.register(CategoryScale, LinearScale);
-  }, []);
+
 
   const [pageState, setPageState] = useState<PageState>(DEFAULT);
   const [isTeamOrPlayerOpen, setIsTeamOrPlayerOpen] = useState(false);
