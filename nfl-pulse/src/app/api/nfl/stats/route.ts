@@ -1,6 +1,5 @@
 import { MAX_YEAR, MIN_YEAR, PLAYERS, PLAYERCATEGORIES, TEAMS, TEAMCATEGORIES } from "@/constants/nflStats";
 import { NflStat } from "@/types/nflStats";
-import { capitalizeString } from "@/utils/textDisplay";
 import { NextRequest, NextResponse } from "next/server";
 import { chromium } from "playwright";
 import { getAiResponse } from "./openAiApi";
