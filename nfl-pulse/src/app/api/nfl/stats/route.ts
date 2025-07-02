@@ -1,6 +1,5 @@
 import { MAX_YEAR, MIN_YEAR, PLAYERS, PLAYERCATEGORIES, TEAMS, TEAMCATEGORIES } from "@/constants/nflStats";
 import { NflStat } from "@/types/nflStats";
-import { capitalizeString } from "@/utils/textDisplay";
 import { NextRequest, NextResponse } from "next/server";
 import { chromium } from "playwright";
 import { getAiResponse } from "./openAiApi";
@@ -16,6 +15,8 @@ type GraphMetaData = {
     yName: string;
 };
 
+let insights: boolean;
+
 export async function GET(
     request: NextRequest
 ) {
@@ -23,7 +24,7 @@ export async function GET(
         const teamOrPlayer = request.nextUrl.searchParams.get("teamsorplayers");
         const category = request.nextUrl.searchParams.get("category");
         const year = Number(request.nextUrl.searchParams.get("year"));
-        const insights = request.nextUrl.searchParams.get("insights") ? true : false;
+        insights = request.nextUrl.searchParams.get("insights") === "true";
 
         if (!validateStatsRequest(teamOrPlayer, category, year)) {
             return NextResponse.json({ error: "Bad Request", status: 400 });
@@ -59,12 +60,6 @@ function validateStatsRequest(teamOrPlayer: string | null, category: string | nu
 }
 
 async function getNflDataWebCrawler(teamsOrPlayers: string, category: string, year: number): Promise<NflStat> {
-    switch(category) {
-        case "fieldgoals": category = "Field Goals"; break;
-        case "kickoffreturns": category = "Kickoff Returns"; break;
-        case "puntreturns": category = "Punt Returns"; break;
-        default: category = capitalizeString(category);
-    }
 
     const browser = await chromium.launch();
     const page = await browser.newPage();
@@ -98,9 +93,11 @@ async function getNflDataWebCrawler(teamsOrPlayers: string, category: string, ye
     await table.first().waitFor({state: 'visible', timeout: 5000});
 
     // take screenshot if ai response is desired
-    const acceptCookiesButton = page.getByRole("button", {name: "Accept Cookies"});
-    await acceptCookiesButton.click();
-    await page.locator("table").screenshot({path: 'screenshot.png'});
+    if (insights) {
+        const acceptCookiesButton = page.getByRole("button", {name: "Accept Cookies"});
+        await acceptCookiesButton.click();
+        await page.locator("table").screenshot({path: 'screenshot.png'});
+    }
 
     const rows = await table.count();
     // the metric is displayed in a different column for each category

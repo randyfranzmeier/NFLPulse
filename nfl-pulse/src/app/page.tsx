@@ -7,10 +7,10 @@ import Chart from 'chart.js/auto';
 import BarChart from '@/components/barchart';
 import Error from '@/components/error';
 import { PLAYERS, PLAYERCATEGORIES, TEAMS, TEAMCATEGORIES, MAX_YEAR, MIN_YEAR } from '@/constants/nflStats';
-import { capitalizeString } from '@/utils/textDisplay';
 import { fetchNFLStats } from '@/lib/nflApi';
 import { NflStat, PageState } from '@/types/nflStats';
 import { DEFAULT, ERROR, LOADING, SUCCESS } from '@/constants/state';
+import FootballSpinner from '@/components/footballSpinner';
 
 const DEFAULT_AI_RESPONSE_MESSAGE = "Insights will appear here!";
 
@@ -53,10 +53,10 @@ function NFLStatPlatform() {
   const handleTeamOrPlayerSelection = (selection: string) => {
     if (selection === TEAMS) {
       setTeamsOrPlayers(TEAMS);
-      setIsTeamOrPlayerText(capitalizeString(TEAMS));
+      setIsTeamOrPlayerText(TEAMS);
     } else if (selection === PLAYERS) {
       setTeamsOrPlayers(PLAYERS);
-      setIsTeamOrPlayerText(capitalizeString(PLAYERS));
+      setIsTeamOrPlayerText(PLAYERS);
     } else {
       alert(`Expected team or player, got ${selection}`);
     }
@@ -68,7 +68,7 @@ function NFLStatPlatform() {
 
   const handleSetCategory = (categorySelection: string) => {
     setCategory(categorySelection);
-    setCategoryText(capitalizeString(categorySelection));
+    setCategoryText(categorySelection);
     setIsCategoryOpen(false);
   }
 
@@ -91,7 +91,8 @@ function NFLStatPlatform() {
           "teamsorplayers": teamsOrPlayers,
           "category": category,
           "year": year,
-          "insights": hearInsights ? "true" : undefined}) as NflStat;
+          "insights": hearInsights ? "true" : "false"
+        }) as NflStat;
 
         setNflStat(chartData);
         // for now, filter by top 5 descending
@@ -239,13 +240,17 @@ function NFLStatPlatform() {
                           {playerCategory}
                         </p>))}
                       {teamsOrPlayers === "" && (
+                        <>
                         <p
                           className="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"
                           role="menuitem"
                           id={`menu-item-invalid`}
                         >
                           Please select Teams or Players to view available categories
-                        </p>)}
+                        </p> 
+                        {/* <Tooltip description="All NFL Teams or Players to receive stats on" display="right" /> */}
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -302,8 +307,9 @@ function NFLStatPlatform() {
             <div className="w-64">
               <button
                 onClick={() => handleGenerateChart()}
+                disabled={pageState === LOADING}
                 type="button"
-                className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-6 py-4 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-6 py-4 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800 disabled:bg-blue-900 disabled:hover:bg-blue-900">
                 Generate
               </button>
 
@@ -344,7 +350,12 @@ function NFLStatPlatform() {
                 yName={nflStatSorted.yName}
               />)}
             {pageState === LOADING && (
-              <p className="w-full h-full text-gray-800">Generating NFL Stats!!!</p>
+              <div className="w-full h-64 flex items-center justify-center text-gray-400">
+                <div className="flex flex-col">
+                  <p>Rushing through the internet to get those stats!</p>
+                  <FootballSpinner />
+                </div>
+              </div>
             )}
             {pageState == ERROR && (
               <Error msg={'Unable to load chart, please refresh the page and try again'} />
