@@ -1,4 +1,5 @@
 # NFLPulse
+![Screenshot 2025-07-01 212556](https://github.com/user-attachments/assets/52e18ba5-223b-480f-9c1e-34af1e917e48)
 
 ## Overview
 This project uses Next.js, Tailwind, Playwright, and the OpenAI API to display NFL statistics and insights!
