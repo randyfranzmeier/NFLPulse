@@ -12,9 +12,6 @@ import FootballSpinner from '@/components/footballSpinner';
 const DEFAULT_AI_RESPONSE_MESSAGE = "Insights will appear here!";
 
 function NFLStatPlatform() {
-
-
-
   const [pageState, setPageState] = useState<PageState>(DEFAULT);
   const [isTeamOrPlayerOpen, setIsTeamOrPlayerOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
